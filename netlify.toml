@@ -10,8 +10,6 @@
   directory = "netlify/functions"
   # Node.js 版本
   node_bundler = "esbuild"
-  # 函数超时时间（秒），最大 26 秒
-  timeout = 26
 
 # 重定向规则 - 将所有请求转发到 serverless function
 [[redirects]]
