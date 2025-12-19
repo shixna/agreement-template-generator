@@ -116,3 +116,6 @@ stats.html
 
 .stylelintcache
 
+# 临时文件目录
+temp/
+*.vue

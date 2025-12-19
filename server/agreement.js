@@ -6,6 +6,11 @@ const dom = require('xmldom').DOMParser;
 const fs = require('fs');
 const tempGenerator = require('./template')
 
+// 使用 /tmp 目录（Netlify Functions 环境）或 ./temp（本地开发）
+// 检测 Netlify 环境：检查 AWS_LAMBDA_FUNCTION_NAME 或 NETLIFY 环境变量
+const isNetlify = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY || process.env.NETLIFY_DEV
+const tempDir = isNetlify ? '/tmp' : path.resolve(__dirname, '../temp')
+
 const parse = (raw) => {
     const doc = new dom().parseFromString(raw)
     const begin = xpath.select("//*[text()[contains(.,'#begin#')]]/ancestor-or-self:: p", doc)
@@ -31,7 +36,8 @@ class Agreement {
         };
         let template
         try{
-            const result = await mammoth.convertToHtml({path: path.resolve(__dirname, `../temp/${file.filename}`)}, options)
+            const inputFilePath = path.join(tempDir, file.filename)
+            const result = await mammoth.convertToHtml({path: inputFilePath}, options)
             let raw = parse(result.value)
                 .replace(/\t/g, '&nbsp;')
                 .replace(/(\n|\r|\r\n)/g,'')
@@ -41,7 +47,7 @@ class Agreement {
             const nameArr = file.filename.split('.')
             nameArr.pop()
             const fileName = nameArr.join('')
-            const filePath = path.resolve(__dirname, `../temp/${fileName}.${Date.parse(new Date())}.vue`)
+            const filePath = path.join(tempDir, `${fileName}.${Date.parse(new Date())}.vue`)
             fs.writeFileSync(filePath, template)
             return {
                 fileName,

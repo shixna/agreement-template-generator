@@ -1,0 +1,29 @@
+[build]
+  # 构建命令（如果需要）
+  command = "echo 'No build step required'"
+  # 发布目录（静态文件）
+  publish = "public"
+
+# Netlify Functions 配置
+[functions]
+  # Functions 目录
+  directory = "netlify/functions"
+  # Node.js 版本
+  node_bundler = "esbuild"
+  # 函数超时时间（秒），最大 26 秒
+  timeout = 26
+
+# 重定向规则 - 将所有请求转发到 serverless function
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server"
+  status = 200
+  force = true
+
+# 环境变量（如果需要，可以在 Netlify 控制台设置）
+[build.environment]
+  # 标识 Netlify 环境
+  NETLIFY = "true"
+  # Node.js 版本
+  NODE_VERSION = "18"
+
