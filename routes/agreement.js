@@ -4,16 +4,26 @@ const Agreement = require('../server/agreement')
 const multer = require('multer')
 const fs = require('fs')
 const path = require('path')
-const os = require('os')
 
 // 使用 /tmp 目录（Netlify Functions 环境）或 ./temp（本地开发）
-// 检测 Netlify 环境：检查 AWS_LAMBDA_FUNCTION_NAME 或 NETLIFY 环境变量
-const isNetlify = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY || process.env.NETLIFY_DEV
+// 检测 Netlify 环境：检查多个环境变量和路径
+const isNetlify = !!(
+  process.env.AWS_LAMBDA_FUNCTION_NAME || 
+  process.env.NETLIFY || 
+  process.env.NETLIFY_DEV ||
+  process.env.NETLIFY_FUNCTION_NAME ||
+  // 检查是否在 Lambda 环境中（Netlify Functions 基于 Lambda）
+  (process.env.LAMBDA_TASK_ROOT && process.env.LAMBDA_RUNTIME_DIR)
+)
 const tempDir = isNetlify ? '/tmp' : './temp'
 
-// 确保临时目录存在
-if (!process.env.NETLIFY && !fs.existsSync('./temp')) {
-    fs.mkdirSync('./temp', { recursive: true })
+// 确保临时目录存在（仅在非 Netlify 环境中创建本地 temp 目录）
+if (!isNetlify && !fs.existsSync('./temp')) {
+    try {
+        fs.mkdirSync('./temp', { recursive: true })
+    } catch (err) {
+        console.error('创建临时目录失败:', err)
+    }
 }
 
 const storage = multer.diskStorage({

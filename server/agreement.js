@@ -7,8 +7,15 @@ const fs = require('fs');
 const tempGenerator = require('./template')
 
 // 使用 /tmp 目录（Netlify Functions 环境）或 ./temp（本地开发）
-// 检测 Netlify 环境：检查 AWS_LAMBDA_FUNCTION_NAME 或 NETLIFY 环境变量
-const isNetlify = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY || process.env.NETLIFY_DEV
+// 检测 Netlify 环境：检查多个环境变量和路径
+const isNetlify = !!(
+  process.env.AWS_LAMBDA_FUNCTION_NAME || 
+  process.env.NETLIFY || 
+  process.env.NETLIFY_DEV ||
+  process.env.NETLIFY_FUNCTION_NAME ||
+  // 检查是否在 Lambda 环境中（Netlify Functions 基于 Lambda）
+  (process.env.LAMBDA_TASK_ROOT && process.env.LAMBDA_RUNTIME_DIR)
+)
 const tempDir = isNetlify ? '/tmp' : path.resolve(__dirname, '../temp')
 
 const parse = (raw) => {
