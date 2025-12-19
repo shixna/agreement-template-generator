@@ -1,4 +1,4 @@
-const tempGenerator = (htmlContent, type) => {
+const tempGenerator = (htmlContent) => {
 const vueTemplate = `<template>
     <div>
         ${htmlContent}
@@ -18,11 +18,7 @@ export default {
     }
 };
 </script>`
-const avalonTemplate = `<div class="commXy">
-    ${htmlContent}
-</div>
-`
-    return type === 'avalon' ? avalonTemplate: vueTemplate;
+    return vueTemplate;
 }
 
 module.exports = tempGenerator;

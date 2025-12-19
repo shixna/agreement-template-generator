@@ -11,6 +11,24 @@
     .upload-demo{
       margin-top: 50px;
     }
+    .upload-demo .el-upload-dragger {
+      width: 100%;
+      height: 180px;
+      border: 2px dashed #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+      padding: 0 100px;
+    }
+    .upload-demo .el-upload-dragger:hover {
+      border-color: #409EFF;
+    }
+    .upload-demo .el-upload-dragger.is-dragover {
+      border-color: #409EFF;
+      background-color: #f5f7fa;
+    }
     .steps{
       margin-top: 50px;
       border-top: 1px solid #999;
@@ -24,15 +42,9 @@
 </head>
 <body>
   <div id="app">
-    <div>
-      <h3>请选择项目：</h3>
-      <el-radio v-model="data.type" label="vue" border>vue</el-radio>
-      <el-radio v-model="data.type" label="avalon" border>avalon</el-radio>
-    </div>
     <el-upload
       class="upload-demo"
       drag
-      :data='data'
       name= "agreement"
       action="../agreement/upload"
       :show-file-list="false"
@@ -41,8 +53,8 @@
       accept='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       >
       <img style="width: 100px;" src="/static/upload.png" alt="">
-      <div class="el-upload__text"><em>点击上传</em></div>
-      <div class="el-upload__tip" slot="tip">只能上传docx文件</div>
+      <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+      <div class="el-upload__tip" slot="tip">只能上传docx文件，支持拖拽上传</div>
     </el-upload>
     <div class="steps">
       <h3>操作步骤</h3> 
@@ -55,29 +67,150 @@
   <!-- import Vue before Element -->
   <script src="/static/lib/vue.js"></script>
   <!-- import JavaScript -->
-  <script src="/static/lib/element-ui/lib/index.css"></script>
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
   <script src="/static/lib/FileSaver.min.js"></script>
 
   <script>
+    // 使用 Element UI（如果已加载）
+    if (typeof ELEMENT !== 'undefined') {
+      Vue.use(ELEMENT);
+    }
+    
     new Vue({
       el: '#app',
       data: function() {
         return { 
-          data: {
-            type: 'vue'
-          },
           fileName: ''
         }
       },
+      mounted() {
+        // 手动添加拖拽事件处理，确保拖拽功能正常工作
+        // 使用多次尝试，确保 Element UI 完全渲染
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.setupDragAndDrop();
+          }, 200);
+        });
+      },
       methods: {
+        setupDragAndDrop() {
+          // 尝试多种选择器
+          let uploadArea = this.$el.querySelector('.el-upload-dragger');
+          if (!uploadArea) {
+            uploadArea = this.$el.querySelector('.el-upload');
+          }
+          if (!uploadArea) {
+            uploadArea = this.$el.querySelector('.upload-demo');
+          }
+          
+          if (uploadArea) {
+            this.setupDragOnElement(uploadArea);
+          } else {
+            // 如果还是找不到，在整个 app 区域设置
+            this.setupDragOnElement(this.$el);
+          }
+        },
+        setupDragOnElement(element) {
+          // 阻止默认的拖拽行为
+          const preventDefaults = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          };
+          
+          ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            element.addEventListener(eventName, preventDefaults, false);
+          });
+          
+          // 拖拽进入
+          element.addEventListener('dragenter', (e) => {
+            const dragger = element.querySelector('.el-upload-dragger') || element;
+            dragger.classList.add('is-dragover');
+          }, false);
+          
+          // 拖拽悬停
+          element.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const dragger = element.querySelector('.el-upload-dragger') || element;
+            dragger.classList.add('is-dragover');
+          }, false);
+          
+          // 拖拽离开
+          element.addEventListener('dragleave', (e) => {
+            // 只有当离开整个元素时才移除样式
+            if (!element.contains(e.relatedTarget)) {
+              const dragger = element.querySelector('.el-upload-dragger') || element;
+              dragger.classList.remove('is-dragover');
+            }
+          }, false);
+          
+          // 放置文件
+          element.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const dragger = element.querySelector('.el-upload-dragger') || element;
+            dragger.classList.remove('is-dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+              const file = files[0];
+              // 检查文件类型
+              if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+                  file.name.toLowerCase().endsWith('.docx')) {
+                this.handleFileUpload(file);
+              } else {
+                alert('只能上传docx文件，当前文件类型：' + (file.type || '未知'));
+              }
+            }
+          }, false);
+        },
+        handleFileUpload(file) {
+          // 获取文件名
+          this.getFileName(file);
+          
+          // 创建 FormData
+          const formData = new FormData();
+          formData.append('agreement', file);
+          
+          // 发送文件
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '../agreement/upload');
+          xhr.responseType = 'blob'; // 设置响应类型为 blob
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              // 处理响应 - 后端返回的是文件内容
+              const blob = xhr.response;
+              const fileName = `${this.fileName}.vue`;
+              saveAs(blob, fileName);
+            } else {
+              // 如果返回错误，尝试读取错误信息
+              if (xhr.responseType === 'blob') {
+                const reader = new FileReader();
+                reader.onload = () => {
+                  try {
+                    const error = JSON.parse(reader.result);
+                    alert(error.msg || '上传失败，请重试');
+                  } catch (e) {
+                    alert('上传失败，请重试');
+                  }
+                };
+                reader.readAsText(xhr.response);
+              } else {
+                alert('上传失败，请重试');
+              }
+            }
+          };
+          xhr.onerror = () => {
+            alert('上传失败，请重试');
+          };
+          xhr.send(formData);
+        },
         getFileName(file) {
-          console.log(file)
           this.fileName = file.name.replace('.docx', '')
         },
         fileSuccess(data) {
-          console.log(this.files)
           var blob = new Blob([data], {type: "text/html;charset=utf-8"});
-          saveAs(blob, `${this.fileName}${this.data.type === 'vue' ? '.vue': '.html'}`);
+          saveAs(blob, `${this.fileName}.vue`);
         }
       }
     })

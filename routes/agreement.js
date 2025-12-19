@@ -16,17 +16,14 @@ const agreementServer = new Agreement()
 
 router.post('/upload', async (req, res) => {
     return uploader.single('agreement')(req, res, async (err) => {
-        const { type } = req.body;
         if (err instanceof multer.MulterError) {
-            // 发生错误
-            console.log(err)
             res.send({ msg: err })
             return
         } else if (err) {
             res.send({ msg: err })
             return
         }
-        const file = await agreementServer.upload(req.file, type || 'vue')
+        const file = await agreementServer.upload(req.file)
         if (file && file.msg) {
             res.send({ msg: err })
             return
