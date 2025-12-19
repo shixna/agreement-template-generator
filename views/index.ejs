@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- import CSS -->
+  <link rel="stylesheet" href="/static/lib/element-ui/theme-chalk/index.css">
+  <style>
+    #app{
+      text-align: center;
+    }
+    .upload-demo{
+      margin-top: 50px;
+    }
+    .steps{
+      margin-top: 50px;
+      border-top: 1px solid #999;
+    }
+    .steps img{
+      width: 600px;
+      margin: 15px 0;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div>
+      <h3>请选择项目：</h3>
+      <el-radio v-model="data.type" label="vue" border>vue</el-radio>
+      <el-radio v-model="data.type" label="avalon" border>avalon</el-radio>
+    </div>
+    <el-upload
+      class="upload-demo"
+      drag
+      :data='data'
+      name= "agreement"
+      action="../agreement/upload"
+      :show-file-list="false"
+      :on-success="fileSuccess"
+      :before-upload="getFileName"
+      accept='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      >
+      <img style="width: 100px;" src="/static/upload.png" alt="">
+      <div class="el-upload__text"><em>点击上传</em></div>
+      <div class="el-upload__tip" slot="tip">只能上传docx文件</div>
+    </el-upload>
+    <div class="steps">
+      <h3>操作步骤</h3> 
+      <img src="/static/step1.png" />
+      <img src="/static/step2.png" />
+      <img src="/static/step3.png" />
+    </div>
+  </div>
+</body>
+  <!-- import Vue before Element -->
+  <script src="/static/lib/vue.js"></script>
+  <!-- import JavaScript -->
+  <script src="/static/lib/element-ui/lib/index.css"></script>
+  <script src="/static/lib/FileSaver.min.js"></script>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: function() {
+        return { 
+          data: {
+            type: 'vue'
+          },
+          fileName: ''
+        }
+      },
+      methods: {
+        getFileName(file) {
+          console.log(file)
+          this.fileName = file.name.replace('.docx', '')
+        },
+        fileSuccess(data) {
+          console.log(this.files)
+          var blob = new Blob([data], {type: "text/html;charset=utf-8"});
+          saveAs(blob, `${this.fileName}${this.data.type === 'vue' ? '.vue': '.html'}`);
+        }
+      }
+    })
+  </script>
+</html>
