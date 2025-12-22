@@ -8,8 +8,9 @@
 [functions]
   # Functions 目录
   directory = "netlify/functions"
-  # Node.js 版本
+  # 使用 esbuild 打包，并显式保留 ejs 作为外部依赖，避免动态 require 失败
   node_bundler = "esbuild"
+  external_node_modules = ["ejs"]
 
 # 重定向规则 - 将所有请求转发到 serverless function
 [[redirects]]
